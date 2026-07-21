@@ -1,0 +1,124 @@
+#include <Arduino.h>
+// This lib. is used to enable using I2C
+#include <Wire.h>
+//These 2 Adafruit libs enables Graphic and OLED libs.
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+/* According to YouTube OLED tutorials we need to define this object to
+represent OLED display in order for the library to work, however we don't accually use it */
+#define OLED_RESET 4
+Adafruit_SSD1306 display(OLED_RESET);
+// I can put function declarations here
+//int myFunction(int, int); as an example
+
+// defining my 3 main Buttons' pins on the pico, as constants 
+const int Button_1 = 13; 
+const int Button_2 = 14; 
+const int Button_3 = 15; 
+// Booking place for buttons' state as variables for reading their status 
+int Button_1_State = LOW; 
+int Button_2_State = LOW; 
+int Button_3_State = LOW; 
+// Booking a place for the random number that needs to be guessed 
+//int Number_2b_guessed; 
+// Booking a place for the guessed number that the player inputs as variable 
+int Guessed_Number = 50; 
+int Number_2b_guessed;
+// So we can limit the number of attempts and the possiblity of losing.
+int attempts = 0;
+
+String hint = "Start Guessing!";
+
+
+void setup() {
+  //Intializing the serial monitor to output and debug if needed.
+  Serial.begin(115200);
+  // Making a seed for the random number generator based on current time in microseconds
+  randomSeed(micros()); 
+  //Acually generating a random number between 1&100 putting it in the premade var.
+  Number_2b_guessed = random(1,101);
+  // Intializing/ Starting the I2C libo
+  Wire.begin(); 
+  // Intializing the OLED with its address 0x3C (change if needed depending on the irl module adrs.)
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  /* Defining that these buttons are used as inputs, and that Pull-Up command 
+  is used to avoid floating pins (Best practice for Buttons)
+  Button_1 is used to decrease and Button_2 is used to increase the guess
+  while Button_3 is used to enter and check the guess */ 
+  pinMode(Button_1, INPUT_PULLUP);
+  pinMode(Button_2, INPUT_PULLUP);
+  pinMode(Button_3, INPUT_PULLUP) ;
+// clears display every time so new text doesn't appear on old text 
+  display.clearDisplay();
+  display.setTextColor(WHITE); 
+  display.setTextSize(1);
+}
+
+void loop() {
+
+  display.clearDisplay();
+  display.setCursor(0,0); 
+  display.print("Guess the Number!:");
+  display.setCursor(40,40);
+  display.print(Guessed_Number);
+  display.setCursor(0,20);
+  display.print(hint);
+  display.display();
+
+  
+  Button_1_State = digitalRead(Button_1);
+  Button_2_State = digitalRead(Button_2);
+  Button_3_State = digitalRead(Button_3);
+
+  /* I am using low here because it means the buttons is pressed 
+  and that's because I am using an internal Pull up resistor */ 
+  if (Button_1_State == LOW) {
+    Guessed_Number --;
+  }
+  if (Button_2_State == LOW){
+    Guessed_Number  ++ ;
+
+  }
+  if (Button_3_State == LOW){
+    if (Guessed_Number == Number_2b_guessed){
+      hint = "Correct!";
+      delay(1000);
+      Number_2b_guessed = random(1,101);
+      Guessed_Number = 50;
+      attempts = 0; 
+      hint = "Guess the Number!";
+
+    }
+    else if (Guessed_Number < Number_2b_guessed){
+        hint = "Higher!";
+        attempts++;
+    }
+    else if (Guessed_Number > Number_2b_guessed){
+      hint = "Lower!"; 
+      attempts ++;
+    }
+    if (attempts >= 10){
+      hint = "U LOSE!";
+      Number_2b_guessed = random(1,101);
+      Guessed_Number = 50;
+      attempts = 0;
+      delay(1000);
+      hint = "Guess the Number!";
+    }
+  } 
+}
+
+/*
+Ok so Now I have to use the Art of problem Solving 
+where I decompose my code into small tasks so it doesn't feel overwhelming.
+1- Generate a random number [Ig check]
+2- Control the guessed number [Ig check]
+3- Output guessed number on the OLED [Ig Check]
+4- Check and compare those 2 numbers [Ig Check]
+5- Output Higher!/Lower!/ Correct! on the OLED [Ig Check]
+6- Add a range of trials so there is a losing possibility [Ig Check]
+7- Add a reset mechanism [Ig Check]
+8- 
+*/
+
