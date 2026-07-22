@@ -29,6 +29,11 @@ int Number_2b_guessed;
 int attempts = 0;
 
 String hint = "Start Guessing!";
+//A var. as its name suggests...
+unsigned long LastTimeClickedButton_1; //It's type to match what millies() returns.
+unsigned long LastTimeClickedButton_2;
+unsigned long LastTimeClickedButton_3;
+const unsigned long debounceDelay = 100; 
 
 
 void setup() {
@@ -74,30 +79,36 @@ void loop() {
   /* I am using low here because it means the buttons is pressed 
   and that's because I am using an internal Pull up resistor */ 
   if (Button_1_State == LOW) {
-    Guessed_Number --;
+    if (millis() - LastTimeClickedButton_1 > debounceDelay){
+      Guessed_Number --;
+    }
   }
   if (Button_2_State == LOW){
-    Guessed_Number  ++ ;
+    if (millis() - LastTimeClickedButton_2 > debounceDelay){
+      Guessed_Number  ++ ;
+    }
 
   }
   if (Button_3_State == LOW){
-    if (Guessed_Number == Number_2b_guessed){
+    if (millis() - LastTimeClickedButton_3 > debounceDelay){
+      if (Guessed_Number == Number_2b_guessed){
       hint = "Correct!";
       delay(1000);
       Number_2b_guessed = random(1,101);
       Guessed_Number = 50;
       attempts = 0; 
       hint = "Guess the Number!";
-
     }
-    else if (Guessed_Number < Number_2b_guessed){
+      else if (Guessed_Number < Number_2b_guessed){
         hint = "Higher!";
         attempts++;
+      }
+      else if (Guessed_Number > Number_2b_guessed){
+        hint = "Lower!"; 
+        attempts ++;
+      }
     }
-    else if (Guessed_Number > Number_2b_guessed){
-      hint = "Lower!"; 
-      attempts ++;
-    }
+    
     if (attempts >= 10){
       hint = "U LOSE!";
       Number_2b_guessed = random(1,101);
@@ -119,6 +130,6 @@ where I decompose my code into small tasks so it doesn't feel overwhelming.
 5- Output Higher!/Lower!/ Correct! on the OLED [Ig Check]
 6- Add a range of trials so there is a losing possibility [Ig Check]
 7- Add a reset mechanism [Ig Check]
-8- 
+8- Add debouncing mechansim to the buttons [Ig Check]
 */
 
