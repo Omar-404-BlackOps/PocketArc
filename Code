@@ -29,7 +29,7 @@ int Number_2b_guessed;
 int attempts = 0;
 
 String hint = "Start Guessing!";
-//A var. as its name suggests...
+//Vars. as there names suggest...
 unsigned long LastTimeClickedButton_1; //It's type to match what millies() returns.
 unsigned long LastTimeClickedButton_2;
 unsigned long LastTimeClickedButton_3;
@@ -56,6 +56,7 @@ void setup() {
   pinMode(Button_3, INPUT_PULLUP) ;
 // clears display every time so new text doesn't appear on old text 
   display.clearDisplay();
+  // Setting text's color to white and size 1 which is the default. 
   display.setTextColor(WHITE); 
   display.setTextSize(1);
 }
@@ -71,26 +72,30 @@ void loop() {
   display.print(hint);
   display.display();
 
-  
+  //Basicly reading buttons' status wether they R pressed or not. 
   Button_1_State = digitalRead(Button_1);
   Button_2_State = digitalRead(Button_2);
   Button_3_State = digitalRead(Button_3);
 
   /* I am using low here because it means the buttons is pressed 
-  and that's because I am using an internal Pull up resistor */ 
+  and that's because I am using an internal Pull up resistor 
+  which causes the current to flow through the button untill 
+  it gets pressed it gets grounded so the pico reads zero/low */ 
   if (Button_1_State == LOW) {
     if (millis() - LastTimeClickedButton_1 > debounceDelay){
+      LastTimeClickedButton_1 = millis();
       Guessed_Number --;
     }
   }
   if (Button_2_State == LOW){
     if (millis() - LastTimeClickedButton_2 > debounceDelay){
+      LastTimeClickedButton_2 = millis();
       Guessed_Number  ++ ;
+        }
     }
-
-  }
   if (Button_3_State == LOW){
     if (millis() - LastTimeClickedButton_3 > debounceDelay){
+      LastTimeClickedButton_3  = millis();
       if (Guessed_Number == Number_2b_guessed){
       hint = "Correct!";
       delay(1000);
@@ -108,7 +113,7 @@ void loop() {
         attempts ++;
       }
     }
-    
+
     if (attempts >= 10){
       hint = "U LOSE!";
       Number_2b_guessed = random(1,101);
@@ -131,5 +136,6 @@ where I decompose my code into small tasks so it doesn't feel overwhelming.
 6- Add a range of trials so there is a losing possibility [Ig Check]
 7- Add a reset mechanism [Ig Check]
 8- Add debouncing mechansim to the buttons [Ig Check]
+10- Update the debouncing mechanism to be more efficient [Ig Check]
 */
 
