@@ -9,17 +9,113 @@
 represent OLED display in order for the library to work, however we don't accually use it */
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
-// I can put function declarations here
-//int myFunction(int, int); as an example
+// I can put function declarations here and that's what I am going to do rn
+void ScreenSetUp(){
+  // Intializing the OLED with its address 0x3C (change if needed depending on the irl module adrs.)
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  // clears display every time so new text doesn't appear on old text 
+  display.clearDisplay();
+  // Setting text's color to white and size 1 which is the default. 
+  display.setTextColor(WHITE); 
+  display.setTextSize(1);
+}
+void ScreenPlay(){
+  display.clearDisplay();
+  display.setCursor(0,0); 
+  display.print("Guess the Number!:");
+  display.setCursor(20,20);
+  display.print(Guessed_Number);
+  display.setCursor(40,40);
+  display.print(hint);
+  display.display();
+}
+void RandomNumberGenerator(){ 
+  //Acually generating a random number between 1&100 putting it in the premade var.
+  Number_2b_guessed = random(1,101);
+}
+//Displays a losing screen when player loses and shows the correct number.
+void LoseScreen(){
+  display.clearDisplay();
+  display.setCursor(20,20);
+  display.print("YOU LOSE!");
+  display.setCursor(0, 40);
+  display.print("The number was: ");
+  display.print(Number_2b_guessed);
+  display.display();
+  delay(2500);
+}
+/*Displays a winning screen when player guesses the correct number 
+and shows number of attempts it took. 
+*/
+void WinScreen(){
+  display.clearDisplay();
+  display.setCursor(20,20);
+  display.print("YOU WIN!!");
+  display.setCursor(0,40);
+  display.print("Attempts: ");
+  display.print(attempts);
+  display.display();
+  delay(2500);
+}
+void ResetGame(){
+  RandomNumberGenerator();
+  Guessed_Number = 50;
+  attempts = 0;
+  hint = "Guess the Number!";
+}
 
+
+
+/* Guess the Number Game's logic, where if Button 3 is pressed
+this function checks the guessed number against the random number and 
+outputs the results (Win or Lose) and hints (Higher/Lower/Start) accordingly
+*/ 
+void CheckGuess(){
+  if (Button_3_State == LOW){
+      if (millis() - LastTimeClickedButton_3 > debounceDelay){
+        LastTimeClickedButton_3  = millis();
+        if (Guessed_Number == Number_2b_guessed){
+          WinScreen();
+          ResetGame();
+      }
+        else if (Guessed_Number < Number_2b_guessed){
+          hint = "Higher!";
+          attempts++;
+        }
+        else if (Guessed_Number > Number_2b_guessed){
+          hint = "Lower!"; 
+          attempts ++;
+        }
+      }
+      if (attempts >= 10){
+      LoseScreen();
+      ResetGame();
+    }
+  }
+}
+
+/* Debouncing logic function 
+*/
+bool debounceDMillis(unsigned long &LastTimeClickedButton){
+  if (millis() - LastTimeClickedButton > debounceDelay){
+    LastTimeClickedButton = millis();
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+
+// My Global Variables and Constants;
 // defining my 3 main Buttons' pins on the pico, as constants 
 const int Button_1 = 13; 
 const int Button_2 = 14; 
 const int Button_3 = 15; 
 // Booking place for buttons' state as variables for reading their status 
-int Button_1_State = LOW; 
-int Button_2_State = LOW; 
-int Button_3_State = LOW; 
+bool Button_1_State = LOW; 
+bool Button_2_State = LOW; 
+bool Button_3_State = LOW; 
 // Booking a place for the random number that needs to be guessed 
 //int Number_2b_guessed; 
 // Booking a place for the guessed number that the player inputs as variable 
@@ -39,14 +135,15 @@ const unsigned long debounceDelay = 100;
 void setup() {
   //Intializing the serial monitor to output and debug if needed.
   Serial.begin(115200);
-  // Making a seed for the random number generator based on current time in microseconds
-  randomSeed(micros()); 
-  //Acually generating a random number between 1&100 putting it in the premade var.
-  Number_2b_guessed = random(1,101);
   // Intializing/ Starting the I2C libo
   Wire.begin(); 
-  // Intializing the OLED with its address 0x3C (change if needed depending on the irl module adrs.)
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  //Using my premaid funcs. to setup the OLED and output the main screen.
+  ScreenSetUp();
+  // Making a seed for the random number generator based on current time in microseconds
+  randomSeed(micros());
+  RandomNumberGenerator();
+
+
   /* Defining that these buttons are used as inputs, and that Pull-Up command 
   is used to avoid floating pins (Best practice for Buttons)
   Button_1 is used to decrease and Button_2 is used to increase the guess
@@ -54,24 +151,11 @@ void setup() {
   pinMode(Button_1, INPUT_PULLUP);
   pinMode(Button_2, INPUT_PULLUP);
   pinMode(Button_3, INPUT_PULLUP) ;
-// clears display every time so new text doesn't appear on old text 
-  display.clearDisplay();
-  // Setting text's color to white and size 1 which is the default. 
-  display.setTextColor(WHITE); 
-  display.setTextSize(1);
+
 }
 
 void loop() {
-
-  display.clearDisplay();
-  display.setCursor(0,0); 
-  display.print("Guess the Number!:");
-  display.setCursor(40,40);
-  display.print(Guessed_Number);
-  display.setCursor(0,20);
-  display.print(hint);
-  display.display();
-
+  ScreenPlay();
   //Basicly reading buttons' status wether they R pressed or not. 
   Button_1_State = digitalRead(Button_1);
   Button_2_State = digitalRead(Button_2);
@@ -80,51 +164,19 @@ void loop() {
   /* I am using low here because it means the buttons is pressed 
   and that's because I am using an internal Pull up resistor 
   which causes the current to flow through the button untill 
-  it gets pressed it gets grounded so the pico reads zero/low */ 
+  it gets pressed resulting in it getting grounded so the pico reads zero/low */ 
   if (Button_1_State == LOW) {
-    if (millis() - LastTimeClickedButton_1 > debounceDelay){
-      LastTimeClickedButton_1 = millis();
+    if (debounceDMillis(LastTimeClickedButton_1)){
       Guessed_Number --;
     }
   }
   if (Button_2_State == LOW){
-    if (millis() - LastTimeClickedButton_2 > debounceDelay){
-      LastTimeClickedButton_2 = millis();
+    if (debounceDMillis(LastTimeClickedButton_2)){
       Guessed_Number  ++ ;
-        }
     }
-  if (Button_3_State == LOW){
-    if (millis() - LastTimeClickedButton_3 > debounceDelay){
-      LastTimeClickedButton_3  = millis();
-      if (Guessed_Number == Number_2b_guessed){
-      hint = "Correct!";
-      delay(1000);
-      Number_2b_guessed = random(1,101);
-      Guessed_Number = 50;
-      attempts = 0; 
-      hint = "Guess the Number!";
-    }
-      else if (Guessed_Number < Number_2b_guessed){
-        hint = "Higher!";
-        attempts++;
-      }
-      else if (Guessed_Number > Number_2b_guessed){
-        hint = "Lower!"; 
-        attempts ++;
-      }
-    }
-
-    if (attempts >= 10){
-      hint = "U LOSE!";
-      Number_2b_guessed = random(1,101);
-      Guessed_Number = 50;
-      attempts = 0;
-      delay(1000);
-      hint = "Guess the Number!";
-    }
-  } 
+  }
+  CheckGuess();
 }
-
 /*
 Ok so Now I have to use the Art of problem Solving 
 where I decompose my code into small tasks so it doesn't feel overwhelming.
@@ -137,5 +189,6 @@ where I decompose my code into small tasks so it doesn't feel overwhelming.
 7- Add a reset mechanism [Ig Check]
 8- Add debouncing mechansim to the buttons [Ig Check]
 10- Update the debouncing mechanism to be more efficient [Ig Check]
+11- Add Functions instead of having all the code in the Loop() [Ig Check]
 */
 
