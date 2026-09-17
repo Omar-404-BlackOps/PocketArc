@@ -19,3 +19,4 @@ A simple programmable pocket-sized 3-buttons game console based on Raspberry Pi 
 <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/fed2eb45-6efb-4c3d-a4be-e532726ca693" />
 
 
+<img width="896" height="535" alt="image" src="https://github.com/user-attachments/assets/d4a91fb9-1124-4506-9776-9344d6d310b0" />
